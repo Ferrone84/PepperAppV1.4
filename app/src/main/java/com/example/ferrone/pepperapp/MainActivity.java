@@ -95,10 +95,10 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
                 Log.i(TAG, "sayAsync: SUCCESS");
                 sayFuture.get().async().run();
 
-                if (textToSay.equals("Hi master")) {
+                if (textToSay.toLowerCase().equals("hi master")) {
                     movePepper(R.raw.bow_a001);
                 }
-                else {
+                else if (textToSay.toLowerCase().equals("hi")) {
                     movePepper(R.raw.hi_001);
                 }
             }
