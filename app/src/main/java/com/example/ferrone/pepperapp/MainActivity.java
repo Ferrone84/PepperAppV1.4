@@ -27,6 +27,7 @@ import com.aldebaran.qi.sdk.object.conversation.Phrase;
 import com.aldebaran.qi.sdk.object.conversation.PhraseSet;
 import com.aldebaran.qi.sdk.object.conversation.Say;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends RobotActivity implements RobotLifecycleCallbacks {
@@ -48,6 +49,7 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
 
         speakButton.setOnClickListener(speakButtonListener);
         speakText.addTextChangedListener(speakTextListener);
+        listenButton.setOnClickListener(listenButtonListener);
     }
 
     @Override
@@ -76,25 +78,48 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         public void afterTextChanged(Editable s) {}
     };
 
-    private View.OnClickListener speakButtonListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            Future<Say> sayAsync = SayBuilder.with(qiContext) // Create a builder with the QiContext.
-                    .withText(textToSay) // Specify the action parameters.
-                    .buildAsync();
+    private View.OnClickListener speakButtonListener = v -> {
+        Future<Say> sayAsync = SayBuilder.with(qiContext) // Create a builder with the QiContext.
+                .withText(textToSay) // Specify the action parameters.
+                .buildAsync();
 
-            Log.i(TAG, "textToSay: " + textToSay);
+        Log.i(TAG, "textToSay: " + textToSay);
 
-            sayAsync.thenConsume(sayFuture -> {
-                if (sayFuture.isSuccess()) {
-                    Log.i(TAG, "sayAsync: SUCCESS");
-                    sayFuture.get().async().run();
-                }
-                else {
-                    Log.i(TAG, "sayAsync: ERROR");
-                }
-            });
-        }
+        sayAsync.thenConsume(sayFuture -> {
+            if (sayFuture.isSuccess()) {
+                Log.i(TAG, "sayAsync: SUCCESS");
+                sayFuture.get().async().run();
+            }
+            else {
+                Log.i(TAG, "sayAsync: ERROR");
+            }
+        });
+    };
+
+    private View.OnClickListener listenButtonListener = v -> {
+        Future<PhraseSet> hello = PhraseSetBuilder.with(qiContext)
+                .withTexts("Hello", "Hi", "hello!").buildAsync();
+
+        hello.thenConsume(helloFuture -> {
+            if (helloFuture.isSuccess()) {
+                Log.i(TAG, "helloFuture: SUCCESS");
+                Future<Listen> listenAsync = ListenBuilder.with(qiContext) // Create a builder with the QiContext.
+                        .withPhraseSet(helloFuture.get()) // Specify the action parameters.
+                        .buildAsync();
+
+                listenAsync.thenConsume(listenFuture -> {
+                    if (listenFuture.isSuccess()) {
+                        Log.i(TAG, "listenAsync: SUCCESS");
+                        listenFuture.get().async().run();
+                    } else {
+                        Log.i(TAG, "listenAsync: ERROR");
+                    }
+                });
+            }
+            else {
+                Log.i(TAG, "helloFuture: ERROR");
+            }
+        });
     };
 
     public void onRobotFocusGained(QiContext qiContext) {
