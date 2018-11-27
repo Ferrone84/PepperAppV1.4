@@ -17,10 +17,14 @@ import com.aldebaran.qi.sdk.Qi;
 import com.aldebaran.qi.sdk.QiContext;
 import com.aldebaran.qi.sdk.QiSDK;
 import com.aldebaran.qi.sdk.RobotLifecycleCallbacks;
+import com.aldebaran.qi.sdk.builder.AnimateBuilder;
+import com.aldebaran.qi.sdk.builder.AnimationBuilder;
 import com.aldebaran.qi.sdk.builder.ListenBuilder;
 import com.aldebaran.qi.sdk.builder.PhraseSetBuilder;
 import com.aldebaran.qi.sdk.builder.SayBuilder;
 import com.aldebaran.qi.sdk.design.activity.RobotActivity;
+import com.aldebaran.qi.sdk.object.actuation.Animate;
+import com.aldebaran.qi.sdk.object.actuation.Animation;
 import com.aldebaran.qi.sdk.object.conversation.Listen;
 import com.aldebaran.qi.sdk.object.conversation.ListenResult;
 import com.aldebaran.qi.sdk.object.conversation.Phrase;
@@ -90,7 +94,13 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
             if (sayFuture.isSuccess()) {
                 Log.i(TAG, "sayAsync: SUCCESS");
                 sayFuture.get().async().run();
-                //salut de la main si textToSay.equals("hello nico");
+
+                if (textToSay.equals("Hi master")) {
+                    movePepper(R.raw.bow_a001);
+                }
+                else {
+                    movePepper(R.raw.hi_001);
+                }
             }
             else {
                 Log.i(TAG, "sayAsync: ERROR");
@@ -127,9 +137,23 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         });
     };
 
+    private void movePepper(Integer positionID) {
+        // Create an animation.
+        Animation animation = AnimationBuilder.with(qiContext) // Create the builder with the context.
+                .withResources(positionID) // Set the animation resource.
+                .build(); // Build the animation.
+
+        Animate animate = AnimateBuilder.with(qiContext) // Create the builder with the context.
+                .withAnimation(animation) // Set the animation.
+                .build(); // Build the animate action.
+
+        // Run the animate action asynchronously.
+        Future<Void> animateFuture = animate.async().run();
+
+    }
+
     public void onRobotFocusGained(QiContext qiContext) {
         this.qiContext = qiContext;
-
     }
 
     @Override
