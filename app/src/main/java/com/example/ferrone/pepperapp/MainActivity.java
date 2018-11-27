@@ -35,6 +35,7 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
     private static final String TAG = "MainActivity";
     private String textToSay = "hello";
     private QiContext qiContext;
+    private TextView listenResultText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +44,7 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         QiSDK.register(this,this);
 
         EditText speakText = findViewById(R.id.speakText);
-        TextView listenResultText = findViewById(R.id.listenResultText);
+        listenResultText = findViewById(R.id.listenResultText);
         Button speakButton = findViewById(R.id.speakButton);
         Button listenButton = findViewById(R.id.listenButton);
 
@@ -89,6 +90,7 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
             if (sayFuture.isSuccess()) {
                 Log.i(TAG, "sayAsync: SUCCESS");
                 sayFuture.get().async().run();
+                //salut de la main si textToSay.equals("hello nico");
             }
             else {
                 Log.i(TAG, "sayAsync: ERROR");
@@ -110,7 +112,10 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
                 listenAsync.thenConsume(listenFuture -> {
                     if (listenFuture.isSuccess()) {
                         Log.i(TAG, "listenAsync: SUCCESS");
-                        listenFuture.get().async().run();
+                        Future<ListenResult> listenResult = listenFuture.get().async().run();
+                        if (listenResult.isSuccess()) {
+                            listenResultText.setText(listenResult.get().getHeardPhrase().getText());
+                        }
                     } else {
                         Log.i(TAG, "listenAsync: ERROR");
                     }
