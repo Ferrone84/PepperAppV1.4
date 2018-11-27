@@ -27,15 +27,13 @@ import com.aldebaran.qi.sdk.object.conversation.Phrase;
 import com.aldebaran.qi.sdk.object.conversation.PhraseSet;
 import com.aldebaran.qi.sdk.object.conversation.Say;
 
+import java.util.concurrent.ExecutionException;
+
 public class MainActivity extends RobotActivity implements RobotLifecycleCallbacks {
 
     private static final String TAG = "MainActivity";
-    private EditText speakText;
-    private TextView listenResultText;
-    private Button speakButton;
-    private Button listenButton;
-    private Say say;
     private String textToSay = "hello";
+    private QiContext qiContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +41,10 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         setContentView(R.layout.activity_main);
         QiSDK.register(this,this);
 
-        speakText = findViewById(R.id.speakText);
-        listenResultText = findViewById(R.id.listenResultText);
-        speakButton = findViewById(R.id.speakButton);
-        listenButton = findViewById(R.id.listenButton);
+        EditText speakText = findViewById(R.id.speakText);
+        TextView listenResultText = findViewById(R.id.listenResultText);
+        Button speakButton = findViewById(R.id.speakButton);
+        Button listenButton = findViewById(R.id.listenButton);
 
         speakButton.setOnClickListener(speakButtonListener);
         speakText.addTextChangedListener(speakTextListener);
@@ -70,9 +68,8 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
                 textToSay = result;
             }
             else {
-                textToSay = "hello";
+                textToSay = "hi";
             }
-            //Log.i(TAG, "changes: " + textToSay);
         }
 
         @Override
@@ -82,61 +79,36 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
     private View.OnClickListener speakButtonListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            // Run the action asynchronously.
-            Future<Void> sayFuture = say.async().run();
-            sayFuture.andThenConsume(Qi.onUiThread((Consumer<Void>) ignore -> {
-                Toast.makeText(MainActivity.this, "Say action finished with success.", Toast.LENGTH_SHORT).show();
-            }));
+            Future<Say> sayAsync = SayBuilder.with(qiContext) // Create a builder with the QiContext.
+                    .withText(textToSay) // Specify the action parameters.
+                    .buildAsync();
+
+            Log.i(TAG, "textToSay: " + textToSay);
+
+            sayAsync.thenConsume(sayFuture -> {
+                if (sayFuture.isSuccess()) {
+                    Log.i(TAG, "sayAsync: SUCCESS");
+                    sayFuture.get().async().run();
+                }
+                else {
+                    Log.i(TAG, "sayAsync: ERROR");
+                }
+            });
         }
     };
 
     public void onRobotFocusGained(QiContext qiContext) {
+        this.qiContext = qiContext;
 
-        say = SayBuilder.with(qiContext) // Create a builder with the QiContext.
-                .withText(textToSay) // Specify the action parameters.
-                .build();
-
-        Log.i(TAG, "textToSay: " + textToSay);
-        /*
-        // Create a new say action.
-        Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-                .withText("Hello human!") // Set the text to say.
-                .build(); // Build the say action.
-
-        // Execute the action.
-        say.run();
-
-        // Create a phrase set.
-        PhraseSet hello = PhraseSetBuilder.with(qiContext)
-                .withTexts("Hello", "Hi", "hello!").build();
-        PhraseSet forwards = PhraseSetBuilder.with(qiContext)
-                .withTexts("move forwards", "forwards").build();
-        PhraseSet backwards = PhraseSetBuilder.with(qiContext)
-                .withTexts("move backwards", "backwards").build();
-        PhraseSet stop = PhraseSetBuilder.with(qiContext)
-                .withTexts("stop moving", "stop").build();
-
-        // Build the action.
-        Listen listen = ListenBuilder.with(qiContext)
-                .withPhraseSets(hello, forwards, backwards, stop)
-                .build();
-
-        // Run the action synchronously.
-        ListenResult listenResult = listen.run();
-        Log.i(TAG, "Heard phrase: " + listenResult.getHeardPhrase().getText()); // Prints "Heard phrase: forwards".
-        PhraseSet matchedPhraseSet = listenResult.getMatchedPhraseSet(); // Equals to forwards.
-        for (Phrase phrase : matchedPhraseSet.getPhrases()) {
-            Log.i(TAG, "Matched phrase: " + phrase.getText());
-        }*/
     }
 
     @Override
     public void onRobotFocusLost() {
-
+        Log.i(TAG, "onRobotFocusLost: ");
     }
 
     @Override
     public void onRobotFocusRefused(String reason) {
-
+        Log.e(TAG, "onRobotFocusRefused: "+reason);
     }
 }
